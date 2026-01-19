@@ -1,29 +1,28 @@
 FROM rust:1.83-alpine AS builder
 
-# Устанавливаем зависимости для сборки
+# зависимости для сборки
 RUN apk add --no-cache musl-dev curl
 
 WORKDIR /app
 
-# Копируем файлы проекта
+# копирование файлы проекта
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 
-# Собираем проект
+# сборка проект
 RUN cargo build --release --locked
 
-# Итоговый образ
+# конечный образ
 FROM alpine:latest
 
-# Устанавливаем curl для health check
+# устанавливаем curl для health check
 RUN apk add --no-cache curl
 
 WORKDIR /app
 
-# Копируем исполняемый файл из builder образа
 COPY --from=builder /app/target/release/antifraud-backend /usr/local/bin/antifraud-backend
 
-# Проверяем, что curl установлен
+# проверка, что curl установлен
 RUN which curl
 
 EXPOSE 8080
