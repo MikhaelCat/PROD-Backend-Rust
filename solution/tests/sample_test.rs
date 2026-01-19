@@ -1,4 +1,4 @@
-// Sample test file for the solution
+// тестирование
 #[cfg(test)]
 mod tests {
     #[test]
@@ -13,9 +13,8 @@ mod tests {
     }
 }
 
-// Integration test example
+// интеграционый тест
 #[test]
 fn integration_test_example() {
-    // Add your integration tests here
     assert!(true);
 }
