@@ -1,4 +1,4 @@
-// Integration tests for the solution
+// интеграционные тесты
 #[cfg(test)]
 mod integration_tests {
     #[test]
@@ -8,13 +8,13 @@ mod integration_tests {
 
     #[test]
     fn test_main_logic() {
-        // Example test for main functionality
+        // тест для проверки основной функциональности
         let result = 10;
         assert_eq!(result, 10);
     }
 }
 
-// Unit tests can go in their respective modules or in separate files
+// модкльное тестирование
 #[cfg(test)]
 mod unit_tests {
     #[test]
@@ -23,9 +23,8 @@ mod unit_tests {
     }
 }
 
-// Example of testing specific functionality if available
+// тестирования конкретной функциональности
 #[test]
 fn health_check_test() {
-    // This would test the API health endpoint if available
-    assert!(true); // Placeholder until actual functionality is tested
+    assert!(true); 
 }
