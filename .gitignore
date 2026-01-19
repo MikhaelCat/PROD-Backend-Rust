@@ -1,24 +1,47 @@
 ```
 # Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
 target/
+.gradle/
+
+# Build artifacts
+dist/
+build/
+*.o
+*.obj
+*.out
 
 # Logs and temp files
 *.log
 *.tmp
-
-# Editors
-.idea/
+*.swp
 
 # Environment
 .env
 .env.local
-.env.*
+*.env.*
 
-# Compiled and build artifacts
-**/*.rs.bk
-Cargo.lock
+# Editors
+.vscode/
+.idea/
 
-# OS generated files
+# OS
 .DS_Store
 Thumbs.db
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yaml
+docker-compose.test.yaml
 ```
