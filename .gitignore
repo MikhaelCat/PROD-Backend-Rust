@@ -1,25 +1,10 @@
 ```
 # Dependencies
-node_modules/
-venv/
-.venv/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
 target/
-.gradle/
-
-# Build artifacts
-dist/
-build/
-*.o
-*.obj
-*.out
 
 # Logs and temp files
 *.log
 *.tmp
-*.swp
 
 # Environment
 .env
@@ -30,18 +15,6 @@ build/
 .vscode/
 .idea/
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Docker
-.dockerignore
-Dockerfile
-docker-compose.yaml
-docker-compose.test.yaml
+# Rust-specific
+Cargo.lock
 ```

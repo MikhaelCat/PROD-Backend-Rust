@@ -114,6 +114,15 @@ pub struct PagedUsers {
     pub size: i64,
 }
 
+// модель страницы транзакций
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PagedTransactions {
+    pub items: Vec<Transaction>,
+    pub total: i64,
+    pub page: i64,
+    pub size: i64,
+}
+
 // модель правила антифрода
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FraudRule {

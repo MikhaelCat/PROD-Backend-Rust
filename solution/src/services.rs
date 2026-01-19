@@ -66,6 +66,7 @@ impl AuthService {
             marital_status: request.marital_status,
             role: UserRole::User, // по умолчанию пользователь
             is_active: true,
+            password_hash: hashed_password,
             created_at: now,
             updated_at: now,
         };
@@ -102,9 +103,9 @@ impl AuthService {
             return Err(ServiceError::Locked("User account is deactivated".to_string()));
         }
         
-        // для полноценной реализации нужно хранить захешированный пароль пользователя в базе данных
-        // сейчас мы просто возвращаем успешную аутентификацию для демонстрации
-        let is_valid = true; // заглушка для демонстрации
+        // проверяем пароль
+        let is_valid = verify(&request.password, &user.password_hash)
+            .map_err(|_| ServiceError::InternalServerError("Password verification failed".to_string()))?;
         
         if !is_valid {
             return Err(ServiceError::Unauthorized("Invalid email or password".to_string()));
