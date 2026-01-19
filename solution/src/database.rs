@@ -10,7 +10,17 @@ use std::env;
 pub async fn establish_connection() -> PgPool {
     // получаем строку подключения из переменных окружения
     let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
+        .unwrap_or_else(|_| {
+            // если переменная окружения не установлена, используем стандартную строку подключения
+            format!(
+                "postgresql://{}:{}@{}:{}/{}",
+                env::var("DB_USER").unwrap_or_else(|_| "postgres".to_string()),
+                env::var("DB_PASSWORD").unwrap_or_else(|_| "postgres".to_string()),
+                env::var("DB_HOST").unwrap_or_else(|_| "localhost".to_string()),
+                env::var("DB_PORT").unwrap_or_else(|_| "5432".to_string()),
+                env::var("DB_NAME").unwrap_or_else(|_| "testdb".to_string())
+            )
+        });
     
     // создаем пул соединений
     let pool = PgPool::connect(&database_url)
