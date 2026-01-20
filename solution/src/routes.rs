@@ -181,7 +181,7 @@ async fn get_users_list(
     req: HttpRequest,
     db_pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ServiceError> {
-    let (_, _current_user_role) = check_user_role(&req, &[UserRole::Admin])?;
+    let (_, current_user_role) = check_user_role(&req, &[UserRole::Admin])?;
     let page = query.get("page").and_then(|s| s.parse::<i64>().ok()).unwrap_or(0);
     let size = query.get("size").and_then(|s| s.parse::<i64>().ok()).unwrap_or(20);
     let users = UserService::get_all_users(&current_user_role, page, size, &db_pool).await?;
@@ -249,7 +249,7 @@ async fn create_fraud_rule(
     req: HttpRequest,
     db_pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ServiceError> {
-    let (_, _current_user_role) = check_user_role(&req, &[UserRole::Admin])?;
+    let (_, current_user_role) = check_user_role(&req, &[UserRole::Admin])?;
     let request = body.into_inner();
     let rule = FraudRuleService::create_fraud_rule(request, &current_user_role, &db_pool).await?;
     Ok(HttpResponse::Created().json(rule))
@@ -261,7 +261,7 @@ async fn get_fraud_rules(
     req: HttpRequest,
     db_pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ServiceError> {
-    let (_, _current_user_role) = check_user_role(&req, &[UserRole::Admin])?;
+    let (_, current_user_role) = check_user_role(&req, &[UserRole::Admin])?;
     let rules = FraudRuleService::get_all_fraud_rules(&current_user_role, &db_pool).await?;
     Ok(HttpResponse::Ok().json(rules))
 }
@@ -274,7 +274,7 @@ async fn get_fraud_rule_by_id(
     db_pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ServiceError> {
     let rule_id = Uuid::parse_str(&path).map_err(|_| ServiceError::BadRequest("Invalid rule ID".to_string()))?;
-    let (_, _current_user_role) = check_user_role(&req, &[UserRole::Admin])?;
+    let (_, current_user_role) = check_user_role(&req, &[UserRole::Admin])?;
     let rule = FraudRuleService::get_fraud_rule_by_id(rule_id, &current_user_role, &db_pool).await?;
     Ok(HttpResponse::Ok().json(rule))
 }
@@ -288,7 +288,7 @@ async fn update_fraud_rule_by_id(
     db_pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ServiceError> {
     let rule_id = Uuid::parse_str(&path).map_err(|_| ServiceError::BadRequest("Invalid rule ID".to_string()))?;
-    let (_, _current_user_role) = check_user_role(&req, &[UserRole::Admin])?;
+    let (_, current_user_role) = check_user_role(&req, &[UserRole::Admin])?;
     let request = body.into_inner();
     let rule = FraudRuleService::update_fraud_rule_by_id(rule_id, request, &current_user_role, &db_pool).await?;
     Ok(HttpResponse::Ok().json(rule))
@@ -302,7 +302,7 @@ async fn delete_fraud_rule_by_id(
     db_pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ServiceError> {
     let rule_id = Uuid::parse_str(&path).map_err(|_| ServiceError::BadRequest("Invalid rule ID".to_string()))?;
-    let (_, _current_user_role) = check_user_role(&req, &[UserRole::Admin])?;
+    let (_, current_user_role) = check_user_role(&req, &[UserRole::Admin])?;
     let success = FraudRuleService::deactivate_fraud_rule(rule_id, &current_user_role, &db_pool).await?;
     if success {
         Ok(HttpResponse::NoContent().finish())
@@ -344,7 +344,7 @@ async fn get_transactions(
     _db_pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ServiceError> {
     // TODO: реализовать получение списка транзакций
-    let (_, current_user_role) = check_user_role(&req, &[UserRole::User, UserRole::Admin])?;
+    let (_, _current_user_role) = check_user_role(&req, &[UserRole::User, UserRole::Admin])?;
     // Пока возвращаем пустой список
     Ok(HttpResponse::Ok().json(PagedTransactions { items: vec![], total: 0, page: 0, size: 20 }))
 }

@@ -1,6 +1,6 @@
 // модуль для парсинга и вычисления dsl выражений
 
-use crate::models::{RuleEvaluationContext, Transaction, User};
+use crate::models::RuleEvaluationContext;
 use regex::Regex;
 
 // тип для представления ast выражения
@@ -403,7 +403,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<String>> {
             },
             '\'' => {
                 // строка в одинарных кавычках
-                let start = i;
+                let _start = i;
                 i += 1; // skip opening quote
                 
                 let mut value = String::new();
@@ -441,7 +441,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<String>> {
             },
             '0'..='9' => {
                 // число
-                let start = i;
+                let _start = i;
                 let mut num_str = String::new();
                 
                 while i < chars.len() && (chars[i].is_ascii_digit() || chars[i] == '.') {
@@ -492,7 +492,7 @@ pub fn validate_dsl(expression: &str) -> Result<(bool, Option<String>), Vec<Stri
             let normalized = normalize_expression(expression);
             Ok((true, Some(normalized)))
         },
-        Err(errors) => Ok((false, None)),
+        Err(_errors) => Ok((false, None)),
     }
 }
 
