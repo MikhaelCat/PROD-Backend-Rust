@@ -214,12 +214,12 @@ async fn create_user_admin(
     validation::validate_region(request.region.clone()).map_err(ServiceError::ValidationFailed)?;
     
     // проверяем, существует ли пользователь с таким email
-    if let Some(_) = User::find_by_email(&db_pool, &request.email).await.map_err(ServiceError::DatabaseError)? {
+    if let Some(_) = User::find_by_email(&db_pool, &request.email).await.map_err(ServiceError::from)? {
         return Err(ServiceError::Conflict("Email already exists".to_string()));
     }
     
     // хешируем пароль
-    let hashed_password = bcrypt::hash(request.password, bcrypt::DEFAULT_COST).map_err(ServiceError::InternalServerError)?;
+    let hashed_password = bcrypt::hash(request.password, bcrypt::DEFAULT_COST).map_err(ServiceError::from)?;
     
     // создаем нового пользователя
     let now = chrono::Utc::now();
@@ -238,7 +238,7 @@ async fn create_user_admin(
         updated_at: now,
     };
     
-    let saved_user = User::create(&db_pool, &user).await.map_err(ServiceError::DatabaseError)?;
+    let saved_user = User::create(&db_pool, &user).await.map_err(ServiceError::from)?;
     Ok(HttpResponse::Created().json(saved_user))
 }
 
@@ -361,7 +361,7 @@ async fn get_transaction_by_id(
     
     let transaction = Transaction::find_by_id(&db_pool, transaction_id)
         .await
-        .map_err(ServiceError::DatabaseError)?
+        .map_err(ServiceError::from)?
         .ok_or_else(|| ServiceError::NotFound("Transaction not found".to_string()))?;
     
     // проверяем права доступа
