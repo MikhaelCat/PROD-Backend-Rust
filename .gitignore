@@ -1,11 +1,46 @@
-```rust
+```
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+*.class
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+.env
+.env.local
+.env.*
+
+# Build directories
+dist/
+build/
 target/
-Cargo.lock
-**/*.rs.bk
-**/*.tmp
+.gradle/
+
+# Python specific
+.mypy_cache/
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+
+# Editors
 .vscode/
 .idea/
-*.log
+*.swp
+*.swo
+
+# System files
 .DS_Store
 Thumbs.db
+*.log
+*.tmp
 ```
