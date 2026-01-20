@@ -316,10 +316,16 @@ pub fn validate_transaction_create(request: &TransactionCreateRequest) -> Result
     let mut errors = Vec::new();
 
     // валидация суммы
-    if request.amount <= 0.0 {
+    if request.amount < 0.0 {
         errors.push(ValidationErrorField {
             field: "amount".to_string(),
             message: "Amount must be positive".to_string(),
+            value: Some(request.amount.to_string()),
+        });
+    } else if request.amount == 0.0 {
+        errors.push(ValidationErrorField {
+            field: "amount".to_string(),
+            message: "Amount must be greater than zero".to_string(),
             value: Some(request.amount.to_string()),
         });
     } else if request.amount > 999999999.99 {

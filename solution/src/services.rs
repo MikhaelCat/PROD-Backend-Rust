@@ -360,7 +360,12 @@ impl FraudRuleService {
         validation::validate_fraud_rule_create(&request).map_err(ServiceError::ValidationFailed)?;
         
         // проверяем, существует ли правило с таким именем
-        // (реализация проверки дубликатов будет зависеть от конкретной логики)
+        let existing_rules = FraudRule::get_all(pool).await.map_err(ServiceError::from)?;
+        for rule in existing_rules {
+            if rule.name == request.name {
+                return Err(ServiceError::Conflict("Rule with this name already exists".to_string()));
+            }
+        }
         
         // создаем новое правило
         let now = Utc::now();
@@ -421,6 +426,14 @@ impl FraudRuleService {
         
         // валидируем правило
         validation::validate_fraud_rule_update(&request).map_err(ServiceError::ValidationFailed)?;
+        
+        // проверяем, существует ли правило с таким именем (если это новый уникальный name)
+        let existing_rules = FraudRule::get_all(pool).await.map_err(ServiceError::from)?;
+        for rule in existing_rules {
+            if rule.name == request.name && rule.id != rule_id {
+                return Err(ServiceError::Conflict("Rule with this name already exists".to_string()));
+            }
+        }
         
         // находим существующее правило
         let mut rule = FraudRule::find_by_id(pool, rule_id)
