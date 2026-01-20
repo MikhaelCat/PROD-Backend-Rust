@@ -1,7 +1,7 @@
 // модуль для валидации данных
 
 use crate::models::*;
-use crate::errors::{ServiceError, ValidationErrorField};
+use crate::errors::ValidationErrorField;
 use regex::Regex;
 use std::collections::HashMap;
 
