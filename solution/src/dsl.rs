@@ -1,7 +1,6 @@
 // модуль для парсинга и вычисления dsl выражений
 
 use crate::models::RuleEvaluationContext;
-use regex::Regex;
 
 // тип для представления ast выражения
 #[derive(Debug, Clone)]

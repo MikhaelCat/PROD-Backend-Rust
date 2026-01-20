@@ -1,7 +1,7 @@
 // модуль для работы с базой данных
 
 use sqlx::{PgPool, Row};
-use crate::models::*;
+pub use crate::models::*;
 use uuid::Uuid;
 use chrono::Utc;
 use std::env;
