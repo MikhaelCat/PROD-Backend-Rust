@@ -1,6 +1,6 @@
 // импортируем необходимые зависимости
 use actix_web::{web, HttpRequest, HttpResponse, Result};
-use serde::Deserialize;
+
 use crate::models::*;
 use crate::services::*;
 use crate::errors::ServiceError;

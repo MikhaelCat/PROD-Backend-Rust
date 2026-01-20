@@ -3,7 +3,7 @@
 use sqlx::{PgPool, Row};
 use crate::models::*;
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use std::env;
 use std::collections::HashMap;
 
