@@ -415,7 +415,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<FraudRuleValidationError>> {
             },
             '\'' => {
                 // строка в одинарных кавычках
-                let _start = i;
+                let start = i;
                 i += 1; // skip opening quote
                 
                 let mut value = String::new();
@@ -438,7 +438,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<FraudRuleValidationError>> {
             },
             '=' | '!' | '<' | '>' => {
                 // операторы
-                let _start = i;
+                let start = i;
                 let mut op = String::new();
                 op.push(c);
                 
@@ -458,7 +458,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<FraudRuleValidationError>> {
             },
             '0'..='9' => {
                 // число
-                let _start = i;
+                let start = i;
                 let mut num_str = String::new();
                 
                 while i < chars.len() && (chars[i].is_ascii_digit() || chars[i] == '.') {
@@ -478,7 +478,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<FraudRuleValidationError>> {
             },
             _ if c.is_alphabetic() || c == '.' => {
                 // слово (идентификатор или ключевое слово)
-                let _start = i;
+                let start = i;
                 let mut word = String::new();
                 
                 while i < chars.len() && (chars[i].is_alphanumeric() || chars[i] == '.') {
