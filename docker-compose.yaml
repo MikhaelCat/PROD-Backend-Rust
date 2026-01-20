@@ -95,26 +95,6 @@ services:
       timeout: 3s
       retries: 10
       start_period: 10s
-
-  test-runner:
-    <<: *dnsfix
-    build:
-      context: ./solution
-      dockerfile: Dockerfile
-    volumes:
-      - ./solution/tests:/app/tests
-      - ./solution/src:/app/src
-      - ./solution/Cargo.toml:/app/Cargo.toml
-      - ./solution/Cargo.lock:/app/Cargo.lock
-    command: cargo test --verbose
-    environment:
-      - RUST_BACKTRACE=1
-    networks: [isolated]
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
 networks:
   isolated:
     internal: true
