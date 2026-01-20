@@ -339,14 +339,39 @@ async fn create_transaction(
 // обработчик получения списка транзакций
 #[actix_web::get("/transactions")]
 async fn get_transactions(
-    _query: web::Query<std::collections::HashMap<String, String>>,
+    query: web::Query<std::collections::HashMap<String, String>>,
     req: HttpRequest,
-    _db_pool: web::Data<PgPool>,
+    db_pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ServiceError> {
-    // TODO: реализовать получение списка транзакций
-    let (_, _current_user_role) = check_user_role(&req, &[UserRole::User, UserRole::Admin])?;
-    // Пока возвращаем пустой список
-    Ok(HttpResponse::Ok().json(PagedTransactions { items: vec![], total: 0, page: 0, size: 20 }))
+    let (current_user_id, current_user_role) = check_user_role(&req, &[UserRole::User, UserRole::Admin])?;
+    
+    // извлекаем параметры пагинации
+    let page = query.get("page").and_then(|s| s.parse::<i64>().ok()).unwrap_or(0);
+    let size = query.get("size").and_then(|s| s.parse::<i64>().ok()).unwrap_or(20);
+    
+    // валидируем параметры пагинации
+    validation::validate_pagination(Some(page), Some(size)).map_err(ServiceError::ValidationFailed)?;
+    
+    let transactions;
+    if current_user_role == UserRole::Admin {
+        // администратор видит все транзакции
+        transactions = Transaction::get_all_paginated(&db_pool, page, size).await.map_err(ServiceError::from)?;
+    } else {
+        // обычный пользователь видит только свои транзакции
+        let user_transactions = Transaction::get_by_user_id(&db_pool, current_user_id, page, size).await.map_err(ServiceError::from)?;
+        
+        // получаем общее количество транзакций пользователя
+        let total = Transaction::count_by_user_id(&db_pool, current_user_id).await.map_err(ServiceError::from)?;
+        
+        transactions = PagedTransactions {
+            items: user_transactions,
+            total,
+            page,
+            size,
+        };
+    }
+    
+    Ok(HttpResponse::Ok().json(transactions))
 }
 
 // обработчик получения транзакции по id
@@ -369,11 +394,14 @@ async fn get_transaction_by_id(
         return Err(ServiceError::Forbidden("Access denied".to_string()));
     }
     
-    // TODO: нужно также получить результаты правил для этой транзакции
-    // Пока возвращаем заглушку
+    // получаем результаты правил для этой транзакции
+    let rule_results = Transaction::get_rule_results_by_transaction_id(&db_pool, transaction_id)
+        .await
+        .map_err(ServiceError::from)?;
+    
     let response = TransactionCreateResponse {
         transaction,
-        rule_results: vec![], // в реальной реализации нужно получить результаты правил
+        rule_results,
     };
     
     Ok(HttpResponse::Ok().json(response))

@@ -582,6 +582,122 @@ impl Transaction {
         
         Ok(transactions)
     }
+
+    // получение транзакций с пагинацией (для администратора)
+    pub async fn get_all_paginated(pool: &PgPool, page: i64, size: i64) -> Result<PagedTransactions, sqlx::Error> {
+        let offset = page * size;
+        
+        let query = r#"
+            SELECT id, user_id, amount, currency, status, merchant_id, merchant_category_code, 
+                   timestamp, ip_address, device_id, channel, location, is_fraud, metadata, created_at
+            FROM transactions
+            ORDER BY created_at DESC
+            LIMIT $1 OFFSET $2
+        "#;
+        
+        let rows = sqlx::query(query)
+            .bind(size)
+            .bind(offset)
+            .fetch_all(pool)
+            .await?;
+        
+        let transactions: Vec<Transaction> = rows.into_iter().map(|row| Transaction {
+            id: row.get("id"),
+            user_id: row.get("user_id"),
+            amount: row.get("amount"),
+            currency: row.get("currency"),
+            status: parse_transaction_status(row.get::<&str, _>("status")),
+            merchant_id: row.get("merchant_id"),
+            merchant_category_code: row.get("merchant_category_code"),
+            timestamp: row.get("timestamp"),
+            ip_address: row.get("ip_address"),
+            device_id: row.get("device_id"),
+            channel: parse_transaction_channel(row.get::<Option<&str>, _>("channel")),
+            location: parse_transaction_location(row.get::<Option<String>, _>("location")),
+            is_fraud: row.get("is_fraud"),
+            metadata: parse_metadata(row.get::<Option<String>, _>("metadata")),
+            created_at: row.get("created_at"),
+        }).collect();
+        
+        // получаем общее количество транзакций
+        let count_query = r#"SELECT COUNT(*) as total FROM transactions"#;
+        let count_row = sqlx::query(count_query)
+            .fetch_one(pool)
+            .await?;
+        let total: i64 = count_row.get("total");
+        
+        Ok(PagedTransactions {
+            items: transactions,
+            total,
+            page,
+            size,
+        })
+    }
+
+    // получение количества транзакций пользователя
+    pub async fn count_by_user_id(pool: &PgPool, user_id: Uuid) -> Result<i64, sqlx::Error> {
+        let query = r#"SELECT COUNT(*) as total FROM transactions WHERE user_id = $1"#;
+        
+        let row = sqlx::query(query)
+            .bind(user_id)
+            .fetch_one(pool)
+            .await?;
+            
+        let total: i64 = row.get("total");
+        
+        Ok(total)
+    }
+
+    // получение результатов проверки правил для транзакции
+    pub async fn get_rule_results_by_transaction_id(pool: &PgPool, transaction_id: Uuid) -> Result<Vec<RuleResult>, sqlx::Error> {
+        let query = r#"
+            SELECT rule_id, rule_name, priority, enabled, matched, description
+            FROM transaction_rule_results
+            WHERE transaction_id = $1
+            ORDER BY priority ASC, rule_id ASC
+        "#;
+        
+        let rows = sqlx::query(query)
+            .bind(transaction_id)
+            .fetch_all(pool)
+            .await?;
+        
+        let rule_results: Vec<RuleResult> = rows.into_iter().map(|row| RuleResult {
+            rule_id: row.get("rule_id"),
+            rule_name: row.get("rule_name"),
+            priority: row.get("priority"),
+            enabled: row.get("enabled"),
+            matched: row.get("matched"),
+            description: row.get("description"),
+        }).collect();
+        
+        Ok(rule_results)
+    }
+
+    // сохранение результатов проверки правил для транзакции
+    pub async fn save_rule_results_for_transaction(pool: &PgPool, transaction_id: Uuid, rule_results: &[RuleResult]) -> Result<(), sqlx::Error> {
+        for result in rule_results {
+            let query = r#"
+                INSERT INTO transaction_rule_results (id, transaction_id, rule_id, rule_name, priority, enabled, matched, description, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            "#;
+            
+            sqlx::query(query)
+                .bind(uuid::Uuid::new_v4())
+                .bind(transaction_id)
+                .bind(result.rule_id)
+                .bind(&result.rule_name)
+                .bind(result.priority)
+                .bind(result.enabled)
+                .bind(result.matched)
+                .bind(&result.description)
+                .bind(chrono::Utc::now())
+                .execute(pool)
+                .await?;
+        }
+        
+        Ok(())
+    }
 }
 
 // вспомогательные функции для парсинга enum значений
