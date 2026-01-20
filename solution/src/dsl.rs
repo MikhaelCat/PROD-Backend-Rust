@@ -1,9 +1,7 @@
 // модуль для парсинга и вычисления dsl выражений
 
-use crate::models::{RuleEvaluationContext, RuleResult, FraudRuleValidationError, Transaction, User};
-use std::collections::HashMap;
+use crate::models::{RuleEvaluationContext, Transaction, User};
 use regex::Regex;
-use lazy_static::lazy_static;
 
 // тип для представления ast выражения
 #[derive(Debug, Clone)]
@@ -76,24 +74,14 @@ pub enum ParseResult<T> {
 }
 
 // функция для парсинга dsl выражения
-pub fn parse_dsl(expression: &str) -> Result<Expression, Vec<FraudRuleValidationError>> {
+pub fn parse_dsl(expression: &str) -> Result<Expression, Vec<String>> {
     let tokens = tokenize(expression)?;
     let mut parser = Parser::new(tokens);
-    let result = parser.parse().map_err(|e| vec![FraudRuleValidationError {
-        code: "DSL_PARSE_ERROR".to_string(),
-        message: e,
-        position: None,
-        near: None,
-    }])?;
+    let result = parser.parse().map_err(|e| vec![e])?;
     
     // если остались токены, значит ошибка
     if !parser.tokens.is_empty() {
-        return Err(vec![FraudRuleValidationError {
-            code: "DSL_PARSE_ERROR".to_string(),
-            message: "Unexpected token".to_string(),
-            position: Some(parser.pos),
-            near: Some(get_near_context(expression, parser.pos)),
-        }]);
+        return Err(vec!["Unexpected token".to_string()]);
     }
     
     Ok(result)
@@ -392,7 +380,7 @@ impl Parser {
 }
 
 // функция для токенизации строки
-fn tokenize(input: &str) -> Result<Vec<Token>, Vec<FraudRuleValidationError>> {
+fn tokenize(input: &str) -> Result<Vec<Token>, Vec<String>> {
     let mut tokens = Vec::new();
     let chars: Vec<char> = input.chars().collect();
     let mut i = 0;
@@ -425,12 +413,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<FraudRuleValidationError>> {
                 }
                 
                 if i >= chars.len() {
-                    return Err(vec![FraudRuleValidationError {
-                        code: "DSL_PARSE_ERROR".to_string(),
-                        message: "Unterminated string literal".to_string(),
-                        position: Some(start),
-                        near: Some(get_near_context(input, start)),
-                    }]);
+                    return Err(vec!["Unterminated string literal".to_string()]);
                 }
                 
                 i += 1; // skip closing quote
@@ -438,7 +421,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<FraudRuleValidationError>> {
             },
             '=' | '!' | '<' | '>' => {
                 // операторы
-                let start = i;
+                let _start = i;
                 let mut op = String::new();
                 op.push(c);
                 
@@ -468,17 +451,12 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<FraudRuleValidationError>> {
                 
                 match num_str.parse::<f64>() {
                     Ok(num) => tokens.push(Token::Number(num)),
-                    Err(_) => return Err(vec![FraudRuleValidationError {
-                        code: "DSL_PARSE_ERROR".to_string(),
-                        message: "Invalid number format".to_string(),
-                        position: Some(start),
-                        near: Some(get_near_context(input, start)),
-                    }]),
+                    Err(_) => return Err(vec!["Invalid number format".to_string()]),
                 }
             },
             _ if c.is_alphabetic() || c == '.' => {
                 // слово (идентификатор или ключевое слово)
-                let start = i;
+                let _start = i;
                 let mut word = String::new();
                 
                 while i < chars.len() && (chars[i].is_alphanumeric() || chars[i] == '.') {
@@ -489,12 +467,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<FraudRuleValidationError>> {
                 tokens.push(Token::Word(word));
             },
             _ => {
-                return Err(vec![FraudRuleValidationError {
-                    code: "DSL_PARSE_ERROR".to_string(),
-                    message: format!("Unexpected character: {}", c),
-                    position: Some(i),
-                    near: Some(get_near_context(input, i)),
-                }]);
+                return Err(vec![format!("Unexpected character: {}", c)]);
             },
         }
     }
@@ -513,13 +486,13 @@ fn get_near_context(input: &str, pos: usize) -> String {
 }
 
 // функция для валидации dsl выражения
-pub fn validate_dsl(expression: &str) -> Result<(bool, Option<String>), Vec<FraudRuleValidationError>> {
+pub fn validate_dsl(expression: &str) -> Result<(bool, Option<String>), Vec<String>> {
     match parse_dsl(expression) {
         Ok(_) => {
             let normalized = normalize_expression(expression);
             Ok((true, Some(normalized)))
         },
-        Err(_errors) => Ok((false, None)),
+        Err(errors) => Ok((false, None)),
     }
 }
 

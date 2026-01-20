@@ -2,8 +2,6 @@
 
 use crate::models::*;
 use crate::errors::ValidationErrorField;
-use regex::Regex;
-use std::collections::HashMap;
 
 // валидация email
 pub fn validate_email(email: &str) -> Result<(), Vec<ValidationErrorField>> {
