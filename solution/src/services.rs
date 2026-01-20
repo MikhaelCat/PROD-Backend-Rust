@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 
 // секретный ключ для jwt
-const JWT_SECRET_KEY: &str = "RANDOM_SECRET";
+const JWT_SECRET_KEY: &str = "Jf/ZpZSxfMWnOexP48Mp1z200jd+8BVZ7ws6Uw5Jp/w=";
 
 // структура для jwt токена
 #[derive(Debug, Serialize, Deserialize)]
@@ -510,6 +510,11 @@ impl TransactionService {
         let mut updated_transaction = saved_transaction.clone();
         updated_transaction.status = final_status.clone();
         updated_transaction.is_fraud = is_fraud;
+        
+        // сохраняем результаты правил в базе данных
+        Transaction::save_rule_results_for_transaction(pool, updated_transaction.id, &rule_results)
+            .await
+            .map_err(ServiceError::from)?;
         
         // создаем ответ
         let response = TransactionCreateResponse {
