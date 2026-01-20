@@ -316,16 +316,28 @@ pub fn validate_transaction_create(request: &TransactionCreateRequest) -> Result
     let mut errors = Vec::new();
 
     // валидация суммы
-    if request.amount < 0.01 || request.amount > 999999999.99 {
+    if request.amount <= 0.0 {
         errors.push(ValidationErrorField {
             field: "amount".to_string(),
-            message: "Amount must be between 0.01 and 999999999.99".to_string(),
+            message: "Amount must be positive".to_string(),
+            value: Some(request.amount.to_string()),
+        });
+    } else if request.amount > 999999999.99 {
+        errors.push(ValidationErrorField {
+            field: "amount".to_string(),
+            message: "Amount must be at most 999999999.99".to_string(),
             value: Some(request.amount.to_string()),
         });
     }
 
     // валидация валюты
-    if request.currency.len() != 3 || !request.currency.chars().all(|c| c.is_ascii_uppercase()) {
+    if request.currency.is_empty() {
+        errors.push(ValidationErrorField {
+            field: "currency".to_string(),
+            message: "Currency is required".to_string(),
+            value: Some(request.currency.clone()),
+        });
+    } else if request.currency.len() != 3 || !request.currency.chars().all(|c| c.is_ascii_uppercase()) {
         errors.push(ValidationErrorField {
             field: "currency".to_string(),
             message: "Currency must be 3 uppercase letters (ISO 4217)".to_string(),
@@ -379,7 +391,13 @@ pub fn validate_transaction_create(request: &TransactionCreateRequest) -> Result
 
     // валидация местоположения
     if let Some(location) = &request.location {
-        if location.country.len() != 2 || !location.country.chars().all(|c| c.is_ascii_uppercase()) {
+        if location.country.is_empty() {
+            errors.push(ValidationErrorField {
+                field: "location.country".to_string(),
+                message: "Country is required in location".to_string(),
+                value: Some(location.country.clone()),
+            });
+        } else if location.country.len() != 2 || !location.country.chars().all(|c| c.is_ascii_uppercase()) {
             errors.push(ValidationErrorField {
                 field: "location.country".to_string(),
                 message: "Country must be 2 uppercase letters (ISO 3166-1 alpha-2)".to_string(),
@@ -387,7 +405,13 @@ pub fn validate_transaction_create(request: &TransactionCreateRequest) -> Result
             });
         }
         
-        if location.city.len() > 128 {
+        if location.city.is_empty() {
+            errors.push(ValidationErrorField {
+                field: "location.city".to_string(),
+                message: "City is required in location".to_string(),
+                value: Some(location.city.clone()),
+            });
+        } else if location.city.len() > 128 {
             errors.push(ValidationErrorField {
                 field: "location.city".to_string(),
                 message: "City must be at most 128 characters".to_string(),
@@ -459,6 +483,34 @@ pub fn validate_pagination(page: Option<i64>, size: Option<i64>) -> Result<(i64,
     
     if errors.is_empty() {
         Ok((page_val, size_val))
+    } else {
+        Err(errors)
+    }
+}
+
+// валидация транзакции на отсутствие обязательных полей
+pub fn validate_transaction_required_fields(request: &TransactionCreateRequest) -> Result<(), Vec<ValidationErrorField>> {
+    let mut errors = Vec::new();
+    
+    // проверяем, что timestamp предоставлен
+    if request.timestamp.timestamp() == 0 {
+        errors.push(ValidationErrorField {
+            field: "timestamp".to_string(),
+            message: "Timestamp is required".to_string(),
+            value: None,
+        });
+    }
+    
+    if request.currency.is_empty() {
+        errors.push(ValidationErrorField {
+            field: "currency".to_string(),
+            message: "Currency is required".to_string(),
+            value: Some(request.currency.clone()),
+        });
+    }
+    
+    if errors.is_empty() {
+        Ok(())
     } else {
         Err(errors)
     }
