@@ -498,6 +498,7 @@ impl TransactionService {
     pub async fn create_transaction(request: TransactionCreateRequest, current_user_id: Option<Uuid>, current_user_role: &UserRole, pool: &PgPool) -> Result<TransactionCreateResponse, ServiceError> {
         // валидируем транзакцию
         validation::validate_transaction_create(&request).map_err(ServiceError::ValidationFailed)?;
+        validation::validate_transaction_required_fields(&request).map_err(ServiceError::ValidationFailed)?;
         
         // определяем user_id для транзакции
         let transaction_user_id = if *current_user_role == UserRole::Admin {
@@ -565,10 +566,15 @@ impl TransactionService {
             }
         }
         
-        // обновляем статус транзакции в базе данных
+        // создаем обновленную транзакцию
         let mut updated_transaction = saved_transaction.clone();
         updated_transaction.status = final_status.clone();
         updated_transaction.is_fraud = is_fraud;
+        
+        // обновляем транзакцию в базе данных
+        let updated_transaction = Transaction::update(pool, &updated_transaction)
+            .await
+            .map_err(ServiceError::from)?;
         
         // сохраняем результаты правил в базе данных
         Transaction::save_rule_results_for_transaction(pool, updated_transaction.id, &rule_results)

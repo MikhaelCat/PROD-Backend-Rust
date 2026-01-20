@@ -698,6 +698,45 @@ impl Transaction {
         
         Ok(())
     }
+    
+    // обновление транзакции
+    pub async fn update(pool: &PgPool, transaction: &Transaction) -> Result<Transaction, sqlx::Error> {
+        let query = r#"
+            UPDATE transactions 
+            SET status = $1, is_fraud = $2
+            WHERE id = $3
+            RETURNING id, user_id, amount, currency, status, merchant_id, merchant_category_code, 
+                    timestamp, ip_address, device_id, channel, location, is_fraud, metadata, created_at
+        "#;
+        
+        let row = sqlx::query(query)
+            .bind(match transaction.status {
+                TransactionStatus::Approved => "APPROVED",
+                TransactionStatus::Declined => "DECLINED",
+            })
+            .bind(transaction.is_fraud)
+            .bind(transaction.id)
+            .fetch_one(pool)
+            .await?;
+        
+        Ok(Transaction {
+            id: row.get("id"),
+            user_id: row.get("user_id"),
+            amount: row.get("amount"),
+            currency: row.get("currency"),
+            status: parse_transaction_status(row.get::<&str, _>("status")),
+            merchant_id: row.get("merchant_id"),
+            merchant_category_code: row.get("merchant_category_code"),
+            timestamp: row.get("timestamp"),
+            ip_address: row.get("ip_address"),
+            device_id: row.get("device_id"),
+            channel: parse_transaction_channel(row.get::<Option<&str>, _>("channel")),
+            location: parse_transaction_location(row.get::<Option<String>, _>("location")),
+            is_fraud: row.get("is_fraud"),
+            metadata: parse_metadata(row.get::<Option<String>, _>("metadata")),
+            created_at: row.get("created_at"),
+        })
+    }
 }
 
 // вспомогательные функции для парсинга enum значений

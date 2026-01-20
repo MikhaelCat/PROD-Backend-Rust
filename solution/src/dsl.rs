@@ -483,6 +483,6 @@ pub fn validate_dsl(expression: &str) -> Result<(bool, Option<String>), Vec<Stri
             let normalized = normalize_expression(expression);
             Ok((true, Some(normalized)))
         },
-        Err(_errors) => Ok((false, None)),
+        Err(errors) => Err(errors),
     }
 }
