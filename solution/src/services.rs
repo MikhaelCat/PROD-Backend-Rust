@@ -47,12 +47,12 @@ impl AuthService {
         validation::validate_region(request.region.clone()).map_err(ServiceError::ValidationFailed)?;
         
         // проверяем, существует ли пользователь с таким email
-        if let Some(_) = User::find_by_email(pool, &request.email).await.map_err(ServiceError::DatabaseError)? {
+        if let Some(_) = User::find_by_email(pool, &request.email).await.map_err(|e: sqlx::Error| ServiceError::DatabaseError(e.to_string()))? {
             return Err(ServiceError::Conflict("Email already exists".to_string()));
         }
         
         // хешируем пароль
-        let hashed_password = hash(request.password, DEFAULT_COST).map_err(ServiceError::InternalServerError)?;
+        let hashed_password = hash(request.password, DEFAULT_COST).map_err(|e: bcrypt::BcryptError| ServiceError::InternalServerError(e.to_string()))?;
         
         // создаем нового пользователя
         let now = Utc::now();
@@ -72,7 +72,7 @@ impl AuthService {
         };
         
         // сохраняем пользователя в базе данных
-        let saved_user = User::create(pool, &user).await.map_err(ServiceError::DatabaseError)?;
+        let saved_user = User::create(pool, &user).await.map_err(|e: sqlx::Error| ServiceError::DatabaseError(e.to_string()))?;
         
         // генерируем jwt токен
         let token = generate_jwt_token(&saved_user.id.to_string(), &saved_user.role)?;
@@ -95,7 +95,7 @@ impl AuthService {
         // находим пользователя по email
         let user = User::find_by_email(pool, &request.email)
             .await
-            .map_err(ServiceError::DatabaseError)?
+            .map_err(|e: sqlx::Error| ServiceError::DatabaseError(e.to_string()))?
             .ok_or_else(|| ServiceError::Unauthorized("Invalid email or password".to_string()))?;
         
         // проверяем, активен ли пользователь
@@ -130,7 +130,7 @@ impl UserService {
     pub async fn get_current_user(user_id: Uuid, pool: &PgPool) -> Result<User, ServiceError> {
         let user = User::find_by_id(pool, user_id)
             .await
-            .map_err(ServiceError::DatabaseError)?
+            .map_err(|e: sqlx::Error| ServiceError::DatabaseError(e.to_string()))?
             .ok_or_else(|| ServiceError::NotFound("User not found".to_string()))?;
         
         Ok(user)
@@ -150,7 +150,7 @@ impl UserService {
         // находим существующего пользователя
         let mut user = User::find_by_id(pool, user_id)
             .await
-            .map_err(ServiceError::DatabaseError)?
+            .map_err(|e: sqlx::Error| ServiceError::DatabaseError(e.to_string()))?
             .ok_or_else(|| ServiceError::NotFound("User not found".to_string()))?;
         
         // проверяем, пытается ли обычный пользователь изменить роль или статус активности
@@ -199,7 +199,7 @@ impl UserService {
         
         let user = User::find_by_id(pool, target_user_id)
             .await
-            .map_err(ServiceError::DatabaseError)?
+            .map_err(|e: sqlx::Error| ServiceError::DatabaseError(e.to_string()))?
             .ok_or_else(|| ServiceError::NotFound("User not found".to_string()))?;
         
         Ok(user)
@@ -224,7 +224,7 @@ impl UserService {
         // находим существующего пользователя
         let mut user = User::find_by_id(pool, target_user_id)
             .await
-            .map_err(ServiceError::DatabaseError)?
+            .map_err(|e: sqlx::Error| ServiceError::DatabaseError(e.to_string()))?
             .ok_or_else(|| ServiceError::NotFound("User not found".to_string()))?;
         
         // если обычный пользователь пытается изменить роль или статус активности
@@ -449,7 +449,7 @@ impl TransactionService {
         // проверяем, существует ли пользователь
         let user = User::find_by_id(pool, transaction_user_id)
             .await
-            .map_err(ServiceError::DatabaseError)?
+            .map_err(|e: sqlx::Error| ServiceError::DatabaseError(e.to_string()))?
             .ok_or_else(|| ServiceError::NotFound("User not found".to_string()))?;
         
         // проверяем, активен ли пользователь
