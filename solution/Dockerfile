@@ -9,6 +9,7 @@ WORKDIR /app
 COPY solution/Cargo.toml solution/Cargo.lock ./
 COPY solution/src ./src
 COPY solution/patches ./patches/ 
+COPY solution/migrations ./migrations/ 
 
 # сборка проект
 RUN cargo build --release --locked

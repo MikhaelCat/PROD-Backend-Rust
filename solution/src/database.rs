@@ -29,10 +29,10 @@ pub async fn establish_connection() -> PgPool {
         .expect("Failed to connect to database");
     
     // выполняем миграции
-    //sqlx::migrate!("./migrations")
-    //    .run(&pool)
-    //    .await
-    //    .expect("Failed to run migrations");
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Failed to run migrations");
     
     pool
 }
