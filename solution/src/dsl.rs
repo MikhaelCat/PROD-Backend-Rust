@@ -1,6 +1,7 @@
 // модуль для парсинга и вычисления dsl выражений
 
 use crate::models::RuleEvaluationContext;
+use regex::Regex;
 
 // тип для представления ast выражения
 #[derive(Debug, Clone)]
@@ -449,8 +450,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<String>> {
     Ok(tokens)
 }
 
-// функция для получения контекста вокруг ошибки
-}
+
 
 // функция для нормализации выражения
 fn normalize_expression(expr: &str) -> String {
