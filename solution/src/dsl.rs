@@ -19,7 +19,6 @@ pub enum Expression {
         op: ComparisonOp,
         value: Value,
     },
-    Group(Box<Expression>),
 }
 
 // тип для бинарных операторов
@@ -65,12 +64,6 @@ pub enum Value {
     String(String),
 }
 
-// результат парсинга
-#[derive(Debug)]
-pub enum ParseResult<T> {
-    Ok(T),
-    Error(String, usize, String), // сообщение, позиция, контекст
-}
 
 // функция для парсинга dsl выражения
 pub fn parse_dsl(expression: &str) -> Result<Expression, Vec<String>> {
@@ -107,7 +100,6 @@ pub fn evaluate_expression(expr: &Expression, context: &RuleEvaluationContext) -
         Expression::Comparison { field, op, value } => {
             compare_field_to_value(field, op, value, context)
         },
-        Expression::Group(inner) => evaluate_expression(inner, context),
     }
 }
 
@@ -244,18 +236,6 @@ impl Parser {
         self.current()
     }
     
-    fn expect(&mut self, expected: Token) -> Result<(), String> {
-        if let Some(token) = self.current() {
-            if *token == expected {
-                self.advance();
-                Ok(())
-            } else {
-                Err(format!("Expected {:?}, found {:?}", expected, token))
-            }
-        } else {
-            Err(format!("Expected {:?}, found EOF", expected))
-        }
-    }
     
     fn parse(&mut self) -> Result<Expression, String> {
         self.parse_or()
@@ -370,12 +350,6 @@ impl Parser {
         })
     }
     
-    fn parse_group(&mut self) -> Result<Expression, String> {
-        self.expect(Token::LeftParen)?;
-        let expr = self.parse_or()?;
-        self.expect(Token::RightParen)?;
-        Ok(Expression::Group(Box::new(expr)))
-    }
 }
 
 // функция для токенизации строки
@@ -476,23 +450,6 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<String>> {
 }
 
 // функция для получения контекста вокруг ошибки
-fn get_near_context(input: &str, pos: usize) -> String {
-    let chars: Vec<char> = input.chars().collect();
-    let start = if pos >= 2 { pos - 2 } else { 0 };
-    let end = std::cmp::min(pos + 2, chars.len());
-    
-    chars[start..end].iter().collect()
-}
-
-// функция для валидации dsl выражения
-pub fn validate_dsl(expression: &str) -> Result<(bool, Option<String>), Vec<String>> {
-    match parse_dsl(expression) {
-        Ok(_) => {
-            let normalized = normalize_expression(expression);
-            Ok((true, Some(normalized)))
-        },
-        Err(_errors) => Ok((false, None)),
-    }
 }
 
 // функция для нормализации выражения
@@ -517,4 +474,15 @@ fn normalize_expression(expr: &str) -> String {
         .to_string();
     
     result
+}
+
+// функция для валидации dsl выражения
+pub fn validate_dsl(expression: &str) -> Result<(bool, Option<String>), Vec<String>> {
+    match parse_dsl(expression) {
+        Ok(_) => {
+            let normalized = normalize_expression(expression);
+            Ok((true, Some(normalized)))
+        },
+        Err(_errors) => Ok((false, None)),
+    }
 }

@@ -189,6 +189,59 @@ impl UserService {
         Ok(updated_user)
     }
     
+    // создание пользователя администратором
+    pub async fn create_user_admin(request: UserCreateRequest, current_user_role: &UserRole, pool: &PgPool) -> Result<User, ServiceError> {
+        // только администратор может создавать пользователей
+        if *current_user_role != UserRole::Admin {
+            return Err(ServiceError::Forbidden("Only admin can create users".to_string()));
+        }
+        
+        // валидируем email
+        validation::validate_email(&request.email).map_err(ServiceError::ValidationFailed)?;
+        
+        // валидируем пароль
+        validation::validate_password(&request.password).map_err(ServiceError::ValidationFailed)?;
+        
+        // валидируем полное имя
+        validation::validate_full_name(&request.full_name).map_err(ServiceError::ValidationFailed)?;
+        
+        // валидируем возраст
+        validation::validate_age(request.age).map_err(ServiceError::ValidationFailed)?;
+        
+        // валидируем регион
+        validation::validate_region(request.region.clone()).map_err(ServiceError::ValidationFailed)?;
+        
+        // проверяем, существует ли пользователь с таким email
+        if let Some(_) = User::find_by_email(pool, &request.email).await.map_err(|e: sqlx::Error| ServiceError::DatabaseError(e.to_string()))? {
+            return Err(ServiceError::Conflict("Email already exists".to_string()));
+        }
+        
+        // хешируем пароль
+        let hashed_password = hash(request.password, DEFAULT_COST).map_err(|e: bcrypt::BcryptError| ServiceError::InternalServerError(e.to_string()))?;
+        
+        // создаем нового пользователя
+        let now = Utc::now();
+        let user = User {
+            id: Uuid::new_v4(),
+            email: request.email,
+            full_name: request.full_name,
+            age: request.age,
+            region: request.region,
+            gender: request.gender,
+            marital_status: request.marital_status,
+            role: request.role, // используем роль из запроса
+            is_active: true, // по умолчанию активный
+            password_hash: hashed_password,
+            created_at: now,
+            updated_at: now,
+        };
+        
+        // сохраняем пользователя в базе данных
+        let saved_user = User::create(pool, &user).await.map_err(|e: sqlx::Error| ServiceError::DatabaseError(e.to_string()))?;
+        
+        Ok(saved_user)
+    }
+    
     // получение пользователя по id
     pub async fn get_user_by_id(target_user_id: Uuid, current_user_id: Uuid, current_user_role: &UserRole, pool: &PgPool) -> Result<User, ServiceError> {
         // если текущий пользователь не администратор и пытается получить чужой профиль
@@ -449,10 +502,16 @@ impl TransactionService {
         // определяем user_id для транзакции
         let transaction_user_id = if *current_user_role == UserRole::Admin {
             // администратор может создавать транзакции для других пользователей
-            request.user_id.ok_or_else(|| ServiceError::BadRequest("User ID is required for admin".to_string()))?
+            match request.user_id {
+                Some(id) => id,
+                None => return Err(ServiceError::BadRequest("User ID is required for admin".to_string())),
+            }
         } else {
             // обычный пользователь может создавать транзакции только для себя
-            current_user_id.ok_or_else(|| ServiceError::Forbidden("Access denied".to_string()))?
+            match current_user_id {
+                Some(id) => id,
+                None => return Err(ServiceError::Forbidden("Access denied".to_string())),
+            }
         };
         
         // проверяем, существует ли пользователь
