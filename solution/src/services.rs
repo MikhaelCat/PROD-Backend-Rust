@@ -3,7 +3,6 @@
 use crate::models::*;
 use crate::errors::ServiceError;
 use crate::validation;
-use crate::database;
 use crate::dsl;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -260,7 +259,7 @@ impl UserService {
     }
     
     // деактивация пользователя
-    pub async fn deactivate_user(target_user_id: Uuid, current_user_id: Uuid, current_user_role: &UserRole, pool: &PgPool) -> Result<bool, ServiceError> {
+    pub async fn deactivate_user(target_user_id: Uuid, _current_user_id: Uuid, current_user_role: &UserRole, pool: &PgPool) -> Result<bool, ServiceError> {
         // только администратор может деактивировать пользователей
         if *current_user_role != UserRole::Admin {
             return Err(ServiceError::Forbidden("Only admin can deactivate users".to_string()));
@@ -531,22 +530,25 @@ impl TransactionService {
             };
             
             // по умолчанию результат false, так как мы реализуем Tier 0
-            let mut matched = false;
-            let mut description = format!("{} = {}, rule did not match", rule.dsl_expression, "false");
             
             // пытаемся распарсить и вычислить правило
-            match dsl::parse_dsl(&rule.dsl_expression) {
+            let (matched, description) = match dsl::parse_dsl(&rule.dsl_expression) {
                 Ok(parsed_expr) => {
                     // если удалось распарсить, вычисляем выражение
-                    matched = dsl::evaluate_expression(&parsed_expr, &context);
-                    description = format!("{} = {}, rule {}", rule.dsl_expression, matched, if matched { "matched" } else { "did not match" });
+                    let eval_result = dsl::evaluate_expression(&parsed_expr, &context);
+                    (
+                        eval_result,
+                        format!("{} = {}, rule {}", rule.dsl_expression, eval_result, if eval_result { "matched" } else { "did not match" })
+                    )
                 },
                 Err(_) => {
                     // если не удалось распарсить, считаем, что правило не сработало
-                    matched = false;
-                    description = format!("Could not parse rule expression, rule did not match");
+                    (
+                        false,
+                        format!("Could not parse rule expression, rule did not match")
+                    )
                 }
-            }
+            };
             
             // добавляем результат правила
             rule_results.push(RuleResult {
