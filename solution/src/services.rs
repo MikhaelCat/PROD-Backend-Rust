@@ -417,10 +417,20 @@ impl FraudRuleService {
                 })
             },
             Err(errors) => {
+                let validation_errors: Vec<FraudRuleValidationError> = errors
+                    .into_iter()
+                    .map(|msg| FraudRuleValidationError {
+                        code: "VALIDATION_ERROR".to_string(),
+                        message: msg,
+                        position: None,
+                        near: None,
+                    })
+                    .collect();
+                
                 Ok(FraudRuleValidateResponse {
                     is_valid: false,
                     normalized_expression: None,
-                    errors,
+                    errors: validation_errors,
                 })
             }
         }

@@ -1,5 +1,6 @@
 // модуль для валидации данных
 
+use regex::Regex;
 use crate::models::*;
 use crate::errors::ValidationErrorField;
 
