@@ -68,6 +68,7 @@ impl User {
                 UserRole::Admin => "ADMIN",
             })
             .bind(user.is_active)
+            .bind(&user.password_hash)
             .bind(user.created_at)
             .bind(user.updated_at)
             .fetch_one(pool)
@@ -83,6 +84,7 @@ impl User {
             marital_status: parse_marital_status(row.get::<Option<&str>, _>("marital_status")),
             role: parse_role(row.get::<&str, _>("role")),
             is_active: row.get("is_active"),
+            password_hash: row.get("password_hash"),
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
         })
@@ -111,6 +113,7 @@ impl User {
                 marital_status: parse_marital_status(row.get::<Option<&str>, _>("marital_status")),
                 role: parse_role(row.get::<&str, _>("role")),
                 is_active: row.get("is_active"),
+                password_hash: row.get("password_hash"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
             }))
@@ -142,6 +145,7 @@ impl User {
                 marital_status: parse_marital_status(row.get::<Option<&str>, _>("marital_status")),
                 role: parse_role(row.get::<&str, _>("role")),
                 is_active: row.get("is_active"),
+                password_hash: row.get("password_hash"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
             }))
@@ -193,6 +197,7 @@ impl User {
             marital_status: parse_marital_status(row.get::<Option<&str>, _>("marital_status")),
             role: parse_role(row.get::<&str, _>("role")),
             is_active: row.get("is_active"),
+            password_hash: row.get("password_hash"),
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
         })
@@ -253,6 +258,7 @@ impl User {
             marital_status: parse_marital_status(row.get::<Option<&str>, _>("marital_status")),
             role: parse_role(row.get::<&str, _>("role")),
             is_active: row.get("is_active"),
+            password_hash: row.get("password_hash"),
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
         }).collect();

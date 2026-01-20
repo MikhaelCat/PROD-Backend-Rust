@@ -185,7 +185,7 @@ impl UserService {
         // сохраняем обновленного пользователя
         let updated_user = User::update(pool, &user)
             .await
-            .map_err(ServiceError::DatabaseError)?;
+            .map_err(ServiceError::from)??;
         
         Ok(updated_user)
     }
@@ -254,7 +254,7 @@ impl UserService {
         // сохраняем обновленного пользователя
         let updated_user = User::update(pool, &user)
             .await
-            .map_err(ServiceError::DatabaseError)?;
+            .map_err(ServiceError::from)??;
         
         Ok(updated_user)
     }
@@ -269,7 +269,7 @@ impl UserService {
         // деактивируем пользователя
         let result = User::deactivate(pool, target_user_id)
             .await
-            .map_err(ServiceError::DatabaseError)?;
+            .map_err(ServiceError::from)??;
         
         Ok(result)
     }
@@ -287,7 +287,7 @@ impl UserService {
         // получаем пользователей
         let paged_users = User::get_all_paginated(pool, page, size)
             .await
-            .map_err(ServiceError::DatabaseError)?;
+            .map_err(ServiceError::from)??;
         
         Ok(paged_users)
     }
@@ -326,7 +326,7 @@ impl FraudRuleService {
         // сохраняем правило в базе данных
         let saved_rule = FraudRule::create(pool, &rule)
             .await
-            .map_err(ServiceError::DatabaseError)?;
+            .map_err(ServiceError::from)??;
         
         Ok(saved_rule)
     }
@@ -340,7 +340,7 @@ impl FraudRuleService {
         
         let rules = FraudRule::get_all(pool)
             .await
-            .map_err(ServiceError::DatabaseError)?;
+            .map_err(ServiceError::from)??;
         
         Ok(rules)
     }
@@ -354,7 +354,7 @@ impl FraudRuleService {
         
         let rule = FraudRule::find_by_id(pool, rule_id)
             .await
-            .map_err(ServiceError::DatabaseError)?
+            .map_err(ServiceError::from)??
             .ok_or_else(|| ServiceError::NotFound("Fraud rule not found".to_string()))?;
         
         Ok(rule)
@@ -373,7 +373,7 @@ impl FraudRuleService {
         // находим существующее правило
         let mut rule = FraudRule::find_by_id(pool, rule_id)
             .await
-            .map_err(ServiceError::DatabaseError)?
+            .map_err(ServiceError::from)??
             .ok_or_else(|| ServiceError::NotFound("Fraud rule not found".to_string()))?;
         
         // обновляем поля правила
@@ -387,7 +387,7 @@ impl FraudRuleService {
         // сохраняем обновленное правило
         let updated_rule = FraudRule::update(pool, &rule)
             .await
-            .map_err(ServiceError::DatabaseError)?;
+            .map_err(ServiceError::from)??;
         
         Ok(updated_rule)
     }
@@ -401,7 +401,7 @@ impl FraudRuleService {
         
         let result = FraudRule::deactivate(pool, rule_id)
             .await
-            .map_err(ServiceError::DatabaseError)?;
+            .map_err(ServiceError::from)??;
         
         Ok(result)
     }
@@ -480,7 +480,7 @@ impl TransactionService {
         // сохраняем транзакцию
         let saved_transaction = Transaction::create(pool, &transaction)
             .await
-            .map_err(ServiceError::DatabaseError)?;
+            .map_err(ServiceError::from)??;
         
         // применяем правила антифрода
         let rule_results = Self::apply_fraud_rules(&saved_transaction, &user, pool).await?;
@@ -516,7 +516,7 @@ impl TransactionService {
         // получаем все активные правила
         let rules = FraudRule::get_all_enabled(pool)
             .await
-            .map_err(ServiceError::DatabaseError)?;
+            .map_err(ServiceError::from)??;
         
         let mut rule_results = Vec::new();
         
