@@ -5,6 +5,7 @@ use crate::models::*;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 use std::env;
+use std::collections::HashMap;
 
 // функция для установки соединения с базой данных
 pub async fn establish_connection() -> PgPool {
@@ -28,10 +29,10 @@ pub async fn establish_connection() -> PgPool {
         .expect("Failed to connect to database");
     
     // выполняем миграции
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await
-        .expect("Failed to run migrations");
+    //sqlx::migrate!("./migrations")
+    //    .run(&pool)
+    //    .await
+    //    .expect("Failed to run migrations");
     
     pool
 }
@@ -41,9 +42,9 @@ impl User {
     // создание нового пользователя
     pub async fn create(pool: &PgPool, user: &User) -> Result<User, sqlx::Error> {
         let query = r#"
-            INSERT INTO users (id, email, full_name, age, region, gender, marital_status, role, is_active, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING id, email, full_name, age, region, gender, marital_status, role, is_active, created_at, updated_at
+            INSERT INTO users (id, email, full_name, age, region, gender, marital_status, role, is_active, password_hash, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            RETURNING id, email, full_name, age, region, gender, marital_status, role, is_active, password_hash, created_at, updated_at
         "#;
         
         let row = sqlx::query(query)
@@ -90,7 +91,7 @@ impl User {
     // поиск пользователя по email
     pub async fn find_by_email(pool: &PgPool, email: &str) -> Result<Option<User>, sqlx::Error> {
         let query = r#"
-            SELECT id, email, full_name, age, region, gender, marital_status, role, is_active, created_at, updated_at
+            SELECT id, email, full_name, age, region, gender, marital_status, role, is_active, password_hash, created_at, updated_at
             FROM users
             WHERE email = $1 AND is_active = true
         "#;
@@ -121,7 +122,7 @@ impl User {
     // поиск пользователя по id
     pub async fn find_by_id(pool: &PgPool, id: Uuid) -> Result<Option<User>, sqlx::Error> {
         let query = r#"
-            SELECT id, email, full_name, age, region, gender, marital_status, role, is_active, created_at, updated_at
+            SELECT id, email, full_name, age, region, gender, marital_status, role, is_active, password_hash, created_at, updated_at
             FROM users
             WHERE id = $1
         "#;
@@ -153,10 +154,9 @@ impl User {
     pub async fn update(pool: &PgPool, user: &User) -> Result<User, sqlx::Error> {
         let query = r#"
             UPDATE users 
-            SET full_name = $1, age = $2, region = $3, gender = $4, marital_status = $5, 
-                role = $6, is_active = $7, updated_at = $8
+            SET full_name = $1, age = $2, region = $3, gender = $4, marital_status = $5, role = $6, is_active = $7, updated_at = $8
             WHERE id = $9
-            RETURNING id, email, full_name, age, region, gender, marital_status, role, is_active, created_at, updated_at
+        RETURNING id, email, full_name, age, region, gender, marital_status, role, is_active, password_hash, created_at, updated_at
         "#;
         
         let row = sqlx::query(query)
@@ -224,7 +224,7 @@ impl User {
         
         // получаем записи пользователей
         let query = r#"
-            SELECT id, email, full_name, age, region, gender, marital_status, role, is_active, created_at, updated_at
+            SELECT id, email, full_name, age, region, gender, marital_status, role, is_active, password_hash, created_at, updated_at
             FROM users
             ORDER BY id
             LIMIT $1 OFFSET $2

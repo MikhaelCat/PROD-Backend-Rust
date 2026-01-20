@@ -79,7 +79,12 @@ pub enum ParseResult<T> {
 pub fn parse_dsl(expression: &str) -> Result<Expression, Vec<FraudRuleValidationError>> {
     let tokens = tokenize(expression)?;
     let mut parser = Parser::new(tokens);
-    let result = parser.parse()?;
+    let result = parser.parse().map_err(|e| vec![FraudRuleValidationError {
+        code: "DSL_PARSE_ERROR".to_string(),
+        message: e,
+        position: None,
+        near: None,
+    }])?;
     
     // если остались токены, значит ошибка
     if !parser.tokens.is_empty() {
@@ -191,10 +196,10 @@ fn compare_field_to_value(field: &Field, op: &ComparisonOp, value: &Value, conte
                     match op {
                         ComparisonOp::Eq => (user_age as f64 - expected_age).abs() < f64::EPSILON,
                         ComparisonOp::Ne => (user_age as f64 - expected_age).abs() >= f64::EPSILON,
-                        ComparisonOp::Lt => user_age as f64 < *expected_age,
-                        ComparisonOp::Le => user_age as f64 <= *expected_age,
-                        ComparisonOp::Gt => user_age as f64 > *expected_age,
-                        ComparisonOp::Ge => user_age as f64 >= *expected_age,
+                        ComparisonOp::Lt => (user_age as f64) < *expected_age,
+                        ComparisonOp::Le => (user_age as f64) <= *expected_age,
+                        ComparisonOp::Gt => (user_age as f64) > *expected_age,
+                        ComparisonOp::Ge => (user_age as f64) >= *expected_age,
                     }
                 } else {
                     false // если возраст пользователя null, результат всегда false
@@ -410,7 +415,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<FraudRuleValidationError>> {
             },
             '\'' => {
                 // строка в одинарных кавычках
-                let start = i;
+                let _start = i;
                 i += 1; // skip opening quote
                 
                 let mut value = String::new();
@@ -433,7 +438,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<FraudRuleValidationError>> {
             },
             '=' | '!' | '<' | '>' => {
                 // операторы
-                let start = i;
+                let _start = i;
                 let mut op = String::new();
                 op.push(c);
                 
@@ -453,7 +458,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<FraudRuleValidationError>> {
             },
             '0'..='9' => {
                 // число
-                let start = i;
+                let _start = i;
                 let mut num_str = String::new();
                 
                 while i < chars.len() && (chars[i].is_ascii_digit() || chars[i] == '.') {
@@ -473,7 +478,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, Vec<FraudRuleValidationError>> {
             },
             _ if c.is_alphabetic() || c == '.' => {
                 // слово (идентификатор или ключевое слово)
-                let start = i;
+                let _start = i;
                 let mut word = String::new();
                 
                 while i < chars.len() && (chars[i].is_alphanumeric() || chars[i] == '.') {
@@ -514,7 +519,7 @@ pub fn validate_dsl(expression: &str) -> Result<(bool, Option<String>), Vec<Frau
             let normalized = normalize_expression(expression);
             Ok((true, Some(normalized)))
         },
-        Err(errors) => Ok((false, None)),
+        Err(_errors) => Ok((false, None)),
     }
 }
 

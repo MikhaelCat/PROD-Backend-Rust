@@ -483,7 +483,7 @@ impl TransactionService {
             .map_err(ServiceError::DatabaseError)?;
         
         // применяем правила антифрода
-        let rule_results = apply_fraud_rules(&saved_transaction, &user, pool).await?;
+        let rule_results = Self::apply_fraud_rules(&saved_transaction, &user, pool).await?;
         
         // определяем статус транзакции на основе результатов правил
         let mut final_status = TransactionStatus::Approved;

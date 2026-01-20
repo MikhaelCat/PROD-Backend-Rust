@@ -365,7 +365,7 @@ async fn get_transaction_by_id(
         .ok_or_else(|| ServiceError::NotFound("Transaction not found".to_string()))?;
     
     // проверяем права доступа
-    if *current_user_role != UserRole::Admin && transaction.user_id != current_user_id {
+    if current_user_role != UserRole::Admin && transaction.user_id != current_user_id {
         return Err(ServiceError::Forbidden("Access denied".to_string()));
     }
     

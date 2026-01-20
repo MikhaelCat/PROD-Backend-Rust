@@ -6,8 +6,9 @@ RUN apk add --no-cache musl-dev curl
 WORKDIR /app
 
 # копирование файлы проекта
-COPY Cargo.toml Cargo.lock ./
-COPY src ./src
+COPY solution/Cargo.toml solution/Cargo.lock ./
+COPY solution/src ./src
+COPY solution/patches ./patches/ 
 
 # сборка проект
 RUN cargo build --release --locked

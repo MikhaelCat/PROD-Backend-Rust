@@ -45,7 +45,7 @@ pub enum UserMaritalStatus {
 }
 
 // перечисление для роли пользователя
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum UserRole {
     #[serde(rename = "USER")]
     User,
