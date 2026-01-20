@@ -95,7 +95,7 @@ impl User {
         let query = r#"
             SELECT id, email, full_name, age, region, gender, marital_status, role, is_active, password_hash, created_at, updated_at
             FROM users
-            WHERE email = $1 AND is_active = true
+            WHERE email = $1
         "#;
         
         if let Some(row) = sqlx::query(query)
